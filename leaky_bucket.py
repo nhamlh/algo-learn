@@ -1,34 +1,25 @@
-#!/usr/bin/env python3
-
 import time
-from collections import deque
 
 class LeakyBucket:
     def __init__(self, capacity, leak_rate):
         self.capacity = capacity
         self.leak_rate = leak_rate  # Seconds to leak 1 item
-        self.bucket = deque(maxlen=capacity)  # Use deque for efficient FIFO behavior
+        self.bucket = 0
         self.last_leak_time = time.time()
 
-    def put(self, item):
-        """Attempts to add an item to the bucket.
+    def can_add(self):
+        """Simulate adding an item to the bucket.
 
-        Returns True if the item was added, False if the bucket is full.
+        Returns True if the item can added, False if the bucket is full.
         """
         now = time.time()
         self._leak(now)  # Leak before checking capacity to maintain constant rate
 
-        print(f"bucket capacity after leak: {len(self.bucket)}/{self.capacity}. Last leak time {self.last_leak_time}. Now {now}")
-
-        if len(self.bucket) < self.capacity:
-            self.bucket.append(item)
+        if self.bucket < self.capacity:
+            self.bucket += 1
             return True
         else:
             return False
-
-    def get(self):
-        """Retrieves an item from the bucket, if available."""
-        return self.bucket.popleft() if self.bucket else None
 
     def _leak(self, now):
         """Simulates the bucket leaking."""
@@ -38,37 +29,30 @@ class LeakyBucket:
         if to_leak <= 0:
             return
 
-        for _ in range(to_leak):
-            if self.bucket:
-                self.bucket.popleft()  # Remove leaked items one by one
+        if to_leak >= self.capacity:
+            self.bucket = 0
+        else:
+            self.bucket -= to_leak
 
         self.last_leak_time = now
 
-# Example usage:
-bucket = LeakyBucket(capacity=3, leak_rate=1)
 
-while True:
-    try:
-        item = input("Enter an item (or 'q' to quit): ")
-        if item == 'q':
+if __name__ == '__main__':
+    # Example usage:
+    bucket = LeakyBucket(capacity=5, leak_rate=2)
+
+    while True:
+        try:
+            item = input("Enter an item (or 'q' to quit): ")
+            if item == 'q':
+                break
+
+            if bucket.can_add():
+                print("Item added to the bucket.")
+            else:
+                print("Bucket is full, try again later.")
+
+            time.sleep(0.1)  # Simulate some processing time
+
+        except KeyboardInterrupt:
             break
-
-        if bucket.put(item):
-            print("Item added to the bucket.")
-        else:
-            print("Bucket is full, try again later.")
-
-        time.sleep(0.4)  # Simulate some processing time
-
-    except KeyboardInterrupt:
-        break
-
-# Retrieve items at a controlled rate
-while True:
-    item = bucket.get()
-
-    if item == None:
-        exit()
-
-    print(f"Retrieved item: {item}")
-    time.sleep(0.5)  # Simulate processing the retrieved item
