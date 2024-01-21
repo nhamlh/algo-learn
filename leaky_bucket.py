@@ -6,7 +6,7 @@ from collections import deque
 class LeakyBucket:
     def __init__(self, capacity, leak_rate):
         self.capacity = capacity
-        self.leak_rate = leak_rate  # Leak rate in units per second
+        self.leak_rate = leak_rate  # Seconds to leak 1 item
         self.bucket = deque(maxlen=capacity)  # Use deque for efficient FIFO behavior
         self.last_leak_time = time.time()
 
@@ -18,7 +18,7 @@ class LeakyBucket:
         now = time.time()
         self._leak(now)  # Leak before checking capacity to maintain constant rate
 
-        print(f"bucket capacity after leak: {len(self.bucket)}/{self.capacity}")
+        print(f"bucket capacity after leak: {len(self.bucket)}/{self.capacity}. Last leak time {self.last_leak_time}. Now {now}")
 
         if len(self.bucket) < self.capacity:
             self.bucket.append(item)
@@ -33,7 +33,10 @@ class LeakyBucket:
     def _leak(self, now):
         """Simulates the bucket leaking."""
         elapsed_time = now - self.last_leak_time
-        to_leak = int(elapsed_time * self.leak_rate)
+        to_leak = int(elapsed_time / self.leak_rate)
+
+        if to_leak <= 0:
+            return
 
         for _ in range(to_leak):
             if self.bucket:
